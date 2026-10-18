@@ -30,18 +30,21 @@ Catatan: unggahan tanpa akun dikunci kata sandi dan dihapus otomatis bila tidak 
 2. **Build → Authentication → Get started → Google → Enable.** Di tab *Settings → Authorized domains*, tambahkan alamat situs Anda (mis. `beresin-kupang.netlify.app` atau `NAMA-AKUN.github.io`) dan domain Anda (mis. `beresin.id`).
 3. **Build → Firestore Database → Create database** → mode *production* → lokasi `asia-southeast2 (Jakarta)`.
    Tab **Rules**: tempel isi `firestore.rules`, ganti `GANTI-EMAIL-PEMILIK@gmail.com` dengan email Google Anda → **Publish**.
-4. **Build → Storage → Get started** → tab **Rules**: tempel isi `storage.rules` → **Publish**.
+4. *(Opsional, perlu paket berbayar Blaze)* **Build → Storage**. Tanpa Storage, foto (KTP, sertifikat, laporan) tetap bisa diunggah: aplikasi memperkecilnya lalu menyimpannya langsung di Firestore. Bila Storage diaktifkan, tempel `storage.rules` di tab **Rules** dan isi `storage: true` di `app/config.js`.
 5. **Project settings → Your apps → Web (</>)** → daftarkan aplikasi → salin objek `firebaseConfig`.
 6. Edit `app/config.js`:
 
 ```js
 window.BERESIN_CONFIG = {
   firebase: { apiKey: "…", authDomain: "…", projectId: "…", storageBucket: "…", messagingSenderId: "…", appId: "…" },
-  owners: ["email-anda@gmail.com"]
+  owners: ["email-anda@gmail.com"],
+  storage: false
 };
 ```
 
 Konfigurasi web Firebase bukan rahasia; keamanannya dijaga oleh aturan di langkah 3–4.
+
+Karena repositori publik, email di `owners` terlihat oleh siapa pun. Untuk menyamarkannya, kosongkan `owners` dan isi `ownerHashes` dengan SHA-256 dari email (huruf kecil) — Claude bisa membuatkannya.
 
 ## 3. Domain sendiri (mis. `beresin.id`)
 

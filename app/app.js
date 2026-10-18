@@ -1581,7 +1581,7 @@ async function grantStaff(targetPid, staffRoleName, reason) {
 }
 
 /* ---------- foto ---------- */
-async function compressImage(file, maxSide) {
+async function compressImage(file, maxSide, quality) {
   maxSide = maxSide || 1280;
   const url = URL.createObjectURL(file);
   try {
@@ -1589,12 +1589,13 @@ async function compressImage(file, maxSide) {
     const k = Math.min(1, maxSide / Math.max(img.width, img.height));
     const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.84));
+    return await new Promise(res => c.toBlob(res, 'image/jpeg', quality || 0.84));
   } finally { URL.revokeObjectURL(url); }
 }
 async function uploadPhoto(file) {
-  if (R.mode === 'local' || R.mode === 'loading') {
-    const blob = await compressImage(file, 480);
+  if (R.mode === 'local' || R.mode === 'loading' || R.inlinePhotos) {
+    // Mode demo & Firebase paket gratis: foto diperkecil lalu disimpan langsung di dokumen
+    const blob = R.inlinePhotos ? await compressImage(file, 800, 0.72) : await compressImage(file, 480);
     const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
     return { url: dataUrl };
   }
@@ -1737,7 +1738,7 @@ function photoGrid(list) {
   if (!list || !list.length) return '';
   return `<div class="photos">${list.map(p => `<img class="photo" src="${esc(photoSrc(p))}" alt="Foto lampiran" loading="lazy" onerror="this.style.visibility='hidden'">`).join('')}</div>`;
 }
-function canUpload() { return R.mode === 'local' || !!R.assets; }
+function canUpload() { return R.mode === 'local' || !!R.inlinePhotos || !!R.assets; }
 function photoPicker(path, list, opts) {
   opts = opts || {};
   if (!canUpload()) return `<p class="xs muted">Unggah foto belum tersedia untuk akun ini.</p>`;
@@ -2026,7 +2027,10 @@ async function initFirebase() {
   if (!firebase.apps.length) firebase.initializeApp(cfg.firebase);
   const auth = firebase.auth();
   const fs = firebase.firestore();
-  R.fb = { auth, fs, storage: firebase.storage ? firebase.storage() : null };
+  // Firebase Storage kini memerlukan paket Blaze; tanpa itu foto disimpan langsung di Firestore (diperkecil)
+  const useStorage = cfg.storage === true && typeof firebase.storage === 'function';
+  R.fb = { auth, fs, storage: useStorage ? firebase.storage() : null };
+  R.inlinePhotos = !useStorage;
   R.mode = 'firebase';
   // driver dengan bentuk yang sama seperti database artifact
   R.db = {
@@ -2066,7 +2070,8 @@ async function initFirebase() {
   if (!user) { R.needLogin = true; R.fbUser = null; COLS.forEach(c => { R.ready[c] = true; }); scheduleRender(true); return; }
   R.fbUser = user; R.needLogin = false;
   ME.uid = user.uid; ME.name = user.displayName || ''; ME.email = user.email || '';
-  ME.isOwner = (cfg.owners || []).map(e => String(e).toLowerCase()).includes(String(user.email || '').toLowerCase());
+  const em = String(user.email || '').trim().toLowerCase();
+  ME.isOwner = (cfg.owners || []).map(e => String(e).trim().toLowerCase()).includes(em) || (await sha256Hex(em).then(h => (cfg.ownerHashes || []).includes(h)).catch(() => false));
   ME.canWrite = true;
   for (const c of COLS) {
     if (c === 'audit' && !ME.isOwner) { R.ready[c] = true; continue; } // log audit hanya untuk admin
@@ -2080,6 +2085,10 @@ async function initFirebase() {
     }, err => { R.error = err && err.code; R.ready[c] = true; scheduleRender(); });
   }
   scheduleRender(true);
+}
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 function loginScreen() {
   return `<div class="splash" style="position:fixed"><div class="mid" style="gap:10px">${logo(104)}<div class="word">Beresin</div><p class="tag">Urusan beres, hidup lebih mudah.</p>

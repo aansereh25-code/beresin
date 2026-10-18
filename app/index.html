@@ -478,7 +478,7 @@ html[data-text="sangat"] { font-size: 125%; }
   function load(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
   var v = 'https://www.gstatic.com/firebasejs/10.12.2/';
   var chain = Promise.resolve();
-  if (cfg.firebase) ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-storage-compat.js'].forEach(function (f) { chain = chain.then(function () { return load(v + f); }); });
+  if (cfg.firebase) ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js'].concat(cfg.storage ? ['firebase-storage-compat.js'] : []).forEach(function (f) { chain = chain.then(function () { return load(v + f); }); });
   chain.catch(function () { console.warn('Firebase gagal dimuat; aplikasi berjalan dalam mode demo.'); }).then(function () { return load('app.js'); });
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 })();
