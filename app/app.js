@@ -2144,6 +2144,7 @@ VIEWS.c_home = () => {
     </div>${banners.length ? `<div class="dots">${[0].concat(banners.map((_, i) => i + 1)).map(i => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>
     ${unpaid.length ? `<button class="card raise row" data-act="go" data-v="c_pay" data-id="${unpaid[0].id}" style="text-align:left;width:100%"><span class="ico sm solid t-amber">${icon('money', 18)}</span><div class="grow"><h4>Tagihan menunggu pembayaran</h4><p class="small muted"><span class="mono">${esc(unpaid[0].code)}</span> · ${rp(unpaid[0].totals.total)}</p></div>${icon('chev', 18, ' class="chev"')}</button>` : ''}
     ${active.slice(0, 2).map(b => activeCard(b)).join('')}
+    ${installCard()}
     <div class="catgrid">${cats.map(c => `<button class="cat" data-act="go" data-v="c_cat" data-id="${c.id}">${catIcon(c.id)}<span>${esc(c.name)}</span></button>`).join('')}
       <button class="cat" data-act="go" data-v="c_cat" data-id="all"><span class="ico t-violet">${icon('grid', 24)}</span><span>Lainnya</span></button></div>
     <section class="stack-sm"><div class="sectionhead"><h3>Layanan Populer</h3><button class="linkbtn" data-act="go" data-v="c_cat" data-id="all">Lihat Semua ${icon('chev', 14)}</button></div>
@@ -3236,6 +3237,46 @@ function applyPrefs() {
 A.setPref = d => { PREF[d.k] = d.x; savePrefs(); };
 A.toggleMotion = () => { PREF.motion = PREF.motion === false; savePrefs(); };
 
+/* ---------- Pasang di layar utama (PWA) ---------- */
+let INSTALL_EVT = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EVT = e; scheduleRender(); });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; try { localStorage.setItem('beresin.installed', '1'); } catch (e) { /* abaikan */ } toast('BERESIN terpasang di layar utama'); scheduleRender(); });
+function isStandalone() { return !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone); }
+function inFrame() { try { return window.self !== window.top; } catch (e) { return true; } }
+function canInstall() { return /^https?:$/.test(location.protocol) && !inFrame() && !isStandalone(); }
+function deviceOS() { const ua = navigator.userAgent || ''; if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios'; if (/Android/i.test(ua)) return 'android'; return 'lain'; }
+function installCard() {
+  if (!canInstall()) return '';
+  try { if (localStorage.getItem('beresin.installHide') === '1') return ''; } catch (e) { /* abaikan */ }
+  if (deviceOS() === 'lain' && !INSTALL_EVT) return '';
+  return `<div class="card raise row installcard"><span class="ico sm solid t-green">${icon('download', 18)}</span><div class="grow"><b class="small">Pasang BERESIN di HP</b><div class="xs muted">Buka lebih cepat dari layar utama, seperti aplikasi.</div></div><button class="btn btn-primary btn-sm" data-act="installApp">Pasang</button><button class="ghostico" data-act="hideInstall" aria-label="Tutup">${icon('x', 16)}</button></div>`;
+}
+A.hideInstall = () => { try { localStorage.setItem('beresin.installHide', '1'); } catch (e) { /* abaikan */ } };
+const INSTALL_STEPS = {
+  ios: ['iPhone / iPad (Safari)', [
+    ['Buka di Safari', 'Pastikan halaman ini dibuka di <b>Safari</b>.'],
+    ['Ketuk tombol Bagikan', 'Ketuk ikon <b>Bagikan</b> (kotak dengan panah ke atas) di bawah layar. Di iOS terbaru, ketuk <b>•••</b> dulu, lalu <b>Bagikan</b>.'],
+    ['Tambah ke Layar Utama', 'Gulir ke bawah, pilih <b>Tambahkan ke Layar Utama</b>, lalu ketuk <b>Tambah</b> di kanan atas.']
+  ]],
+  android: ['Android (Chrome)', [
+    ['Buka di Chrome', 'Pastikan halaman ini dibuka di <b>Chrome</b>.'],
+    ['Ketuk menu ⋮', 'Ketuk <b>titik tiga ⋮</b> di kanan atas layar.'],
+    ['Instal aplikasi', 'Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>, lalu ketuk <b>Instal</b>.']
+  ]]
+};
+function installStepsHtml(os) {
+  const list = os === 'ios' || os === 'android' ? [os] : ['android', 'ios'];
+  return list.map(k => { const [title, steps] = INSTALL_STEPS[k]; return `<div class="stack-sm"><h4>${esc(title)}</h4><ol class="isteps">${steps.map(([h, t]) => `<li><span class="t">${esc(h)}</span><span class="d small muted">${t}</span></li>`).join('')}</ol></div>`; }).join('');
+}
+A.installApp = async () => {
+  if (INSTALL_EVT) {
+    const e = INSTALL_EVT; INSTALL_EVT = null;
+    try { e.prompt(); const r = await e.userChoice; if (r && r.outcome === 'accepted') toast('Memasang BERESIN…'); } catch (err) { /* abaikan */ }
+    return;
+  }
+  sheetHtml('Pasang BERESIN', `<div class="stack"><div class="row">${logo(44)}<div><h3>Pasang di layar utama</h3><p class="xs muted">Gratis, tanpa Play Store / App Store.</p></div></div>${installStepsHtml(deviceOS())}<button class="btn btn-primary btn-block" data-act="sheetCancel">Mengerti</button></div>`);
+};
+
 function setLi(o) {
   const tag = o.act ? 'button' : 'div';
   const attrs = o.act ? `data-act="${o.act}"${o.v ? ` data-v="${o.v}"` : ''}${o.id ? ` data-id="${esc(o.id)}"` : ''}${o.r ? ` data-r="${o.r}"` : ''}${o.x ? ` data-x="${o.x}"` : ''}` : '';
@@ -3286,6 +3327,7 @@ VIEWS.settings = () => {
     </div>
     <div class="setsec">Bantuan &amp; info</div>
     <div class="list">
+      ${canInstall() ? setLi({ act: 'installApp', ic: 'download', label: 'Pasang di layar utama HP', hint: 'Buka BERESIN seperti aplikasi biasa.' }) : ''}
       ${setLi({ act: 'go', v: role === 'worker' ? 'w_tickets' : 'c_tickets', ic: 'headset', label: 'Pusat bantuan' })}
       ${setLi({ act: 'aboutApp', ic: 'info', label: 'Tentang BERESIN', val: 'Versi ' + APP_VERSION })}
       ${R.mode === 'local'
