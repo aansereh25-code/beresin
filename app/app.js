@@ -1683,6 +1683,11 @@ const IC = {
   tag: '<path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
   box: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/>',
+  type: '<path d="M4 7V5h11v2M9.5 5v14M7 19h5M14 12v-1.5h7V12M17.5 10.5V19M16 19h3"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14M10 11v6M14 11v6"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
   route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
@@ -2741,11 +2746,11 @@ VIEWS.c_account = () => {
   const nAddr = me ? Object.values(me.addresses || {}).filter(a => !a.removed).length : 0;
   const nFav = me ? Object.values(me.favs || {}).filter(Boolean).length : 0;
   const li = (act, v, ic, label, extra) => `<button class="li" data-act="${act}" ${act === 'role' ? `data-r="${v}"` : `data-v="${v}"`}><span class="ico xs t-green">${icon(ic, 17)}</span><span class="grow">${label}${extra || ''}</span>${icon('chev', 16, ' class="chev"')}</button>`;
-  return `<div class="stack">${pagehead('Akun', { back: false })}${testerSwitch('customer')}
+  return `<div class="stack">${pagehead('Akun', { back: false, right: `<button class="ghostico" data-act="go" data-v="settings" aria-label="Pengaturan">${icon('settings', 20)}</button>` })}${testerSwitch('customer')}
     ${me ? `<div class="card raise row">${avatarP(me, 'lg')}<div class="grow"><h3>${esc(me.name)}</h3><p class="small muted">${esc(me.phone)} · ${esc(areaName(me.area))}</p>${me.ownerUid !== ME.uid ? pill('Mode uji', 'accent') : ''}</div><button class="btn btn-ghost btn-sm" data-act="go" data-v="c_register" data-id="${me.id}">Ubah</button></div>` : custGate('memesan layanan')}
     ${me ? `<div class="list">${li('tab', 'c_orders', 'receipt', 'Pesanan saya')}${li('go', 'c_addresses', 'pin', 'Alamat tersimpan', nAddr ? ` <span class="muted small">(${nAddr})</span>` : '')}${li('go', 'c_favs', 'heart', 'Layanan favorit', nFav ? ` <span class="muted small">(${nFav})</span>` : '')}${li('go', 'c_tickets', 'headset', 'Bantuan, keluhan & garansi', openT ? ` <span class="pill warn">${openT} aktif</span>` : '')}${li('go', 'c_reviews', 'star', 'Ulasan dari mitra')}${li('go', 'notif_prefs', 'bell', 'Pengaturan notifikasi')}</div>` : ''}
-    <div class="list">${li('role', 'worker', 'brief', 'Ingin jadi mitra? Buka aplikasi Mitra')}</div>
-    ${R.mode === 'firebase' ? `<button class="btn btn-ghost btn-block" data-act="fbLogout">Keluar (${esc(ME.email || '')})</button>` : ''}
+    <div class="list">${li('go', 'settings', 'settings', 'Pengaturan', ' <span class="muted small">· tema, akun, privasi</span>')}${li('role', 'worker', 'brief', 'Ingin jadi mitra? Buka aplikasi Mitra')}</div>
+    ${R.mode === 'firebase' ? `<button class="btn btn-ghost btn-block" data-act="askLogout">${icon('logout', 18)} Keluar</button>` : ''}
     ${aboutCard()}</div>`;
 };
 function aboutCard() {
@@ -3150,16 +3155,16 @@ A.wPayout = () => { const bal = balancesOf(actor('worker').id); ask({ title: 'Ca
 /* ---------- Akun mitra ---------- */
 VIEWS.w_profile = () => {
   const w = actor('worker');
-  if (!w) return `<div class="stack">${pagehead('Akun', { back: false })}${testerSwitch('worker')}${workerGate()}${aboutCard()}</div>`;
+  if (!w) return `<div class="stack">${pagehead('Akun', { back: false, right: `<button class="ghostico" data-act="go" data-v="settings" aria-label="Pengaturan">${icon('settings', 20)}</button>` })}${testerSwitch('worker')}${workerGate()}<div class="list"><button class="li" data-act="go" data-v="settings"><span class="ico xs t-green">${icon('settings', 17)}</span><span class="grow">Pengaturan</span>${icon('chev', 16, ' class="chev"')}</button></div>${aboutCard()}</div>`;
   const v = VERIF[w.verif] || [w.verif, ''];
   const li = (v2, ic, label, act) => `<button class="li" data-act="${act || 'go'}" ${act === 'role' ? `data-r="${v2}"` : `data-v="${v2}"`}><span class="ico xs t-green">${icon(ic, 17)}</span><span class="grow">${label}</span>${icon('chev', 16, ' class="chev"')}</button>`;
-  return `<div class="stack">${pagehead('Akun Mitra', { back: false })}${testerSwitch('worker')}
+  return `<div class="stack">${pagehead('Akun Mitra', { back: false, right: `<button class="ghostico" data-act="go" data-v="settings" aria-label="Pengaturan">${icon('settings', 20)}</button>` })}${testerSwitch('worker')}
     <div class="card raise stack-sm"><div class="row">${avatarP(w, 'lg')}<div class="grow"><h3>${esc(w.name)}</h3><p class="small muted">${esc(w.phone)} · ${esc(areaName(w.area))}</p>${pill(v[0], v[1])}</div><button class="btn btn-ghost btn-sm" data-act="go" data-v="w_register" data-id="${w.id}">Ubah</button></div>
       <div class="chips">${(w.skills || []).map(c => `<span class="chip">${icon(BL.catById(c).icon, 14)} ${esc(BL.catById(c).name)}</span>`).join('')}</div>
       ${Object.keys(w.certs || {}).filter(k => w.certs[k]).length ? `<p class="small">${icon('shield', 14)} ${Object.keys(w.certs).filter(k => w.certs[k]).map(k => esc(BL.CERTS[k])).join(', ')}</p>` : ''}</div>
     <div class="list">${li('w_schedule', 'calendar', 'Jadwal & area kerja')}${li('w_wallet', 'wallet', 'Dompet, deposit & pencairan')}${li('w_perf', 'chart', 'Performa')}${li('w_portfolio', 'image', 'Portofolio')}${li('w_reviews', 'star', 'Ulasan dari pelanggan')}${li('w_tickets', 'headset', 'Bantuan & keluhan')}${li('notif_prefs', 'bell', 'Pengaturan notifikasi')}</div>
-    <div class="list">${li('customer', 'user', 'Buka aplikasi Pelanggan', 'role')}</div>
-    ${R.mode === 'firebase' ? `<button class="btn btn-ghost btn-block" data-act="fbLogout">Keluar (${esc(ME.email || '')})</button>` : ''}
+    <div class="list">${li('settings', 'settings', 'Pengaturan')}${li('customer', 'user', 'Buka aplikasi Pelanggan', 'role')}</div>
+    ${R.mode === 'firebase' ? `<button class="btn btn-ghost btn-block" data-act="askLogout">${icon('logout', 18)} Keluar</button>` : ''}
     ${aboutCard()}</div>`;
 };
 VIEWS.w_portfolio = () => {
@@ -3202,6 +3207,151 @@ VIEWS.w_register = p => {
 };
 A.toggleSkill = d => { const s = S.d[d.k].skills; const i = s.indexOf(d.c); if (i >= 0) s.splice(i, 1); else s.push(d.c); };
 A.saveWorker = async d => { if (!requireWrite()) return; const v = Object.assign({}, S.d[d.k]); if (!v.agree) return toast('Setujui ketentuan mitra terlebih dahulu.', true); v.photo = (v.photo || [])[0] || null; const id = await saveProfile('worker', v); if (id) { S.d[d.k] = null; toast(v.id ? 'Profil tersimpan' : 'Pendaftaran terkirim'); back(); } };
+/* =========================================================
+   BERESIN — Pengaturan: tampilan, akun, privasi & keamanan, keluar
+   Preferensi tampilan disimpan per perangkat (localStorage).
+   ========================================================= */
+const APP_VERSION = '1.5';
+const PREF_KEY = 'beresin.pref';
+const PREF = { theme: 'auto', text: 'normal', motion: true };
+const HOST_THEME = document.documentElement.getAttribute('data-theme');
+function loadPrefs() {
+  try { const o = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); if (o && typeof o === 'object') Object.assign(PREF, o); } catch (e) { /* abaikan */ }
+  applyPrefs();
+}
+function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify(PREF)); } catch (e) { /* abaikan */ } applyPrefs(); }
+function applyPrefs() {
+  const r = document.documentElement;
+  const t = PREF.theme === 'light' || PREF.theme === 'dark' ? PREF.theme : HOST_THEME;
+  if (t) r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
+  r.setAttribute('data-text', ['normal', 'besar', 'sangat'].includes(PREF.text) ? PREF.text : 'normal');
+  r.classList.toggle('reduce-motion', PREF.motion === false);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    if (!meta.dataset.base) meta.dataset.base = meta.getAttribute('content') || '#16A34A';
+    const dark = t === 'dark' || (t !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    meta.setAttribute('content', dark ? '#09110E' : meta.dataset.base);
+  }
+}
+A.setPref = d => { PREF[d.k] = d.x; savePrefs(); };
+A.toggleMotion = () => { PREF.motion = PREF.motion === false; savePrefs(); };
+
+function setLi(o) {
+  const tag = o.act ? 'button' : 'div';
+  const attrs = o.act ? `data-act="${o.act}"${o.v ? ` data-v="${o.v}"` : ''}${o.id ? ` data-id="${esc(o.id)}"` : ''}${o.r ? ` data-r="${o.r}"` : ''}${o.x ? ` data-x="${o.x}"` : ''}` : '';
+  return `<${tag} class="li ${o.danger ? 'danger' : ''}" ${attrs}><span class="ico xs ${o.danger ? 't-red' : (o.tone || 't-green')}">${icon(o.ic, 17)}</span><span class="grow"><span class="strong small" style="display:block">${esc(o.label)}</span>${o.hint ? `<span class="xs muted" style="display:block">${esc(o.hint)}</span>` : ''}</span>${o.val ? `<span class="val">${esc(o.val)}</span>` : ''}${o.act ? icon('chev', 16, ' class="chev"') : ''}</${tag}>`;
+}
+function segPref(key, opts, label) {
+  return `<div class="seg full" role="group" aria-label="${esc(label)}">${opts.map(([v, l, ic]) => `<button data-act="setPref" data-k="${key}" data-x="${v}" aria-pressed="${PREF[key] === v}">${ic ? icon(ic, 15) : ''}<span>${esc(l)}</span></button>`).join('')}</div>`;
+}
+function geoStatusText() {
+  if (!('geolocation' in navigator)) return 'Tidak didukung';
+  return R.geo === 'unavailable' ? 'Diblokir' : 'Tanya dulu';
+}
+
+VIEWS.settings = () => {
+  const role = S.role === 'worker' ? 'worker' : 'customer';
+  const me = actor(role);
+  const other = role === 'worker' ? ['customer', 'user', 'Buka aplikasi Pelanggan'] : ['worker', 'brief', 'Buka aplikasi Mitra'];
+  const account = [
+    me ? setLi({ act: 'go', v: role === 'worker' ? 'w_register' : 'c_register', id: me.id, ic: 'user', label: 'Profil saya', hint: 'Nama, nomor HP, foto, kecamatan' }) : setLi({ act: 'go', v: role === 'worker' ? 'w_register' : 'c_register', ic: 'user', label: role === 'worker' ? 'Daftar sebagai mitra' : 'Buat profil pelanggan' }),
+    R.mode === 'firebase' && ME.email ? setLi({ ic: 'lock', label: 'Akun Google', hint: ME.email, tone: 't-blue' }) : '',
+    me && role === 'customer' ? setLi({ act: 'go', v: 'c_addresses', ic: 'pin', label: 'Alamat tersimpan' }) : '',
+    me && role === 'worker' ? setLi({ act: 'go', v: 'w_schedule', ic: 'calendar', label: 'Jadwal & area kerja' }) : '',
+    me ? setLi({ act: 'go', v: 'notif_prefs', ic: 'bell', label: 'Notifikasi', hint: 'Promo, push, email' }) : '',
+    setLi({ act: 'role', r: other[0], ic: other[1], label: other[2] })
+  ].join('');
+  const logout = R.mode === 'firebase'
+    ? `<button class="btn btn-danger btn-block" data-act="askLogout">${icon('logout', 18)} Keluar</button>`
+    : R.mode === 'local'
+      ? note('', 'info', '<b>Mode demo</b> tidak memakai akun, jadi tidak ada tombol keluar. Untuk memulai dari awal, pakai <b>Hapus data demo</b> di atas.')
+      : note('', 'info', 'Akun Anda dikelola oleh platform tempat aplikasi ini dibuka. Untuk keluar, keluar dari akun di platform tersebut.');
+  return `<div class="stack">${pagehead('Pengaturan')}
+    <div class="setsec">Tampilan</div>
+    <div class="list">
+      <div class="setrow"><div class="lbl"><span class="ico xs t-amber">${icon(document.documentElement.getAttribute('data-theme') === 'dark' ? 'moon' : 'sun', 17)}</span><span class="grow"><span class="strong small" style="display:block">Tema &amp; pencahayaan</span><span class="xs muted">Otomatis mengikuti mode terang/gelap HP Anda.</span></span></div>
+        ${segPref('theme', [['light', 'Terang', 'sun'], ['dark', 'Gelap', 'moon'], ['auto', 'Otomatis', 'repeat']], 'Tema')}</div>
+      <div class="setrow"><div class="lbl"><span class="ico xs t-blue">${icon('type', 17)}</span><span class="grow"><span class="strong small" style="display:block">Ukuran teks</span><span class="xs muted">Berlaku di seluruh aplikasi.</span></span></div>
+        ${segPref('text', [['normal', 'Normal'], ['besar', 'Besar'], ['sangat', 'Sangat besar']], 'Ukuran teks')}</div>
+      <div class="li"><span class="ico xs t-violet">${icon('sparkle', 17)}</span><span class="grow"><span class="strong small" style="display:block">Kurangi animasi</span><span class="xs muted">Matikan gerakan & transisi.</span></span><button class="switch" role="switch" aria-checked="${PREF.motion === false}" data-act="toggleMotion" aria-label="Kurangi animasi"></button></div>
+    </div>
+    <div class="setsec">Akun</div>
+    <div class="list">${account}</div>
+    <div class="setsec">Privasi &amp; keamanan</div>
+    <div class="list">
+      ${setLi({ act: 'go', v: 'legal', x: 'privasi', ic: 'shield', label: 'Kebijakan privasi' })}
+      ${setLi({ act: 'go', v: 'legal', x: 'ketentuan', ic: 'file', label: 'Syarat & ketentuan' })}
+      ${setLi({ ic: 'nav', label: 'Izin lokasi perangkat', hint: 'Lokasi hanya dibagikan selama pesanan aktif.', val: geoStatusText(), tone: 't-teal' })}
+      ${me ? setLi({ act: 'askDeleteAccount', ic: 'trash', label: 'Ajukan penghapusan akun', danger: true }) : ''}
+    </div>
+    <div class="setsec">Bantuan &amp; info</div>
+    <div class="list">
+      ${setLi({ act: 'go', v: role === 'worker' ? 'w_tickets' : 'c_tickets', ic: 'headset', label: 'Pusat bantuan' })}
+      ${setLi({ act: 'aboutApp', ic: 'info', label: 'Tentang BERESIN', val: 'Versi ' + APP_VERSION })}
+      ${R.mode === 'local'
+        ? setLi({ act: 'askResetDevice', ic: 'trash', label: 'Hapus data demo', hint: 'Menghapus semua data di perangkat ini.', danger: true })
+        : setLi({ act: 'askResetDevice', ic: 'repeat', label: 'Atur ulang perangkat ini', hint: 'Mengembalikan tampilan & pilihan ke bawaan.', tone: 't-slate' })}
+    </div>
+    ${logout}
+    <p class="xs muted" style="text-align:center">Versi ${APP_VERSION}</p></div>`;
+};
+
+A.askLogout = () => ask({ title: 'Keluar dari BERESIN?', body: `Anda akan keluar dari akun ${esc(ME.email || '')} di perangkat ini. Pesanan dan data Anda tetap tersimpan.`, ok: 'Keluar', danger: true, onOk: () => A.fbLogout() });
+A.askDeleteAccount = () => {
+  const role = S.role === 'worker' ? 'worker' : 'customer';
+  ask({
+    title: 'Ajukan penghapusan akun',
+    body: 'Permintaan dikirim ke tim BERESIN untuk ditinjau. Pesanan yang masih berjalan perlu diselesaikan dulu. Catatan transaksi di buku besar tetap disimpan.',
+    fields: [{ k: 'reason', label: 'Alasan (opsional)', ph: 'Ceritakan alasan Anda' }],
+    ok: 'Kirim permintaan', danger: true,
+    onOk: async v => {
+      const tid = await openTicket({ type: 'lainnya', subject: 'Permintaan penghapusan akun', text: `Saya meminta akun ${role === 'worker' ? 'mitra' : 'pelanggan'} saya beserta datanya dihapus.${v.reason ? ' Alasan: ' + v.reason : ''}` });
+      if (tid) go('ticket', { id: tid });
+    }
+  });
+};
+A.askResetDevice = () => {
+  const local = R.mode === 'local';
+  ask({
+    title: local ? 'Hapus data demo?' : 'Atur ulang perangkat ini?',
+    body: local ? 'Semua pesanan, profil, dan pengaturan demo di perangkat ini akan dihapus. Tindakan ini tidak bisa dibatalkan.' : 'Tema, ukuran teks, dan pilihan tampilan kembali ke bawaan. Data akun Anda tidak terhapus.',
+    ok: local ? 'Hapus' : 'Atur ulang', danger: local,
+    onOk: () => {
+      try { Object.keys(localStorage).filter(k => k.startsWith('beresin.') && (local || k === PREF_KEY || k === 'beresin.ui')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* abaikan */ }
+      location.reload();
+    }
+  });
+};
+A.aboutApp = () => sheetHtml('Tentang BERESIN', `<div class="stack" style="align-items:center;text-align:center">${logo(64)}<h3>BERESIN</h3><p class="small muted">Urusan beres, hidup lebih mudah.<br>Versi ${APP_VERSION} · Kupang, NTT</p>
+  <div class="card soft stack-sm" style="text-align:left;width:100%"><p class="small">${R.mode === 'local' ? 'Mode demo: data tersimpan di perangkat ini saja.' : 'Data tersimpan di database bersama dan tersinkron antarperangkat.'}</p><p class="small muted">Pembayaran, deposit, dan pencairan masih berjalan dalam <b>mode simulasi</b> sampai gateway pembayaran berizin dihubungkan. Notifikasi push, email, dan WhatsApp belum terhubung.</p></div>
+  <button class="btn btn-primary btn-block" data-act="sheetCancel">Tutup</button></div>`);
+
+const LEGAL = {
+  privasi: ['Kebijakan Privasi', [
+    ['Data yang kami kumpulkan', 'Nama, nomor HP, alamat dan kecamatan, foto profil, foto kondisi atau hasil pekerjaan, isi chat, ulasan, riwayat pesanan dan transaksi. Untuk mitra juga keahlian, sertifikat, dan dokumen verifikasi.'],
+    ['Lokasi', 'Titik lokasi dan posisi perjalanan hanya dipakai selama pesanan aktif, untuk menampilkan jarak dan perkiraan tiba. Berbagi lokasi bisa dihentikan kapan saja dan berhenti otomatis saat pesanan selesai atau dibatalkan.'],
+    ['Untuk apa data dipakai', 'Mencocokkan pesanan dengan mitra terdekat, menghitung biaya, memproses laporan dan tagihan, menangani keluhan dan garansi, serta menjaga keamanan layanan.'],
+    ['Siapa yang bisa melihat', 'Nomor HP dan alamat lengkap hanya ditampilkan kepada mitra yang menangani pesanan Anda (dan sebaliknya). Dokumen verifikasi mitra hanya bisa dibuka oleh mitra itu sendiri dan admin. BERESIN tidak menjual data pribadi.'],
+    ['Hak Anda', 'Anda dapat melihat dan mengubah profil kapan saja, mengatur notifikasi, dan mengajukan penghapusan akun lewat Pengaturan → Ajukan penghapusan akun. Catatan transaksi tetap disimpan untuk pembukuan.'],
+    ['Hubungi kami', 'Pertanyaan tentang privasi dapat dikirim lewat Pusat Bantuan di aplikasi.']
+  ]],
+  ketentuan: ['Syarat & Ketentuan', [
+    ['Peran BERESIN', 'BERESIN menghubungkan pelanggan dengan mitra jasa terverifikasi di Kupang dan sekitarnya. Pekerjaan dilakukan oleh mitra.'],
+    ['Harga & persetujuan', 'Estimasi harga dan biaya perjalanan ditampilkan sebelum memesan. Pekerjaan tambahan, material, atau perubahan jadwal harus diajukan mitra dan disetujui pelanggan di aplikasi sebelum dikerjakan.'],
+    ['Pembayaran', 'Pelanggan membayar setelah pekerjaan dikonfirmasi selesai, atau per termin untuk proyek yang disepakati. Selama masa uji coba, pembayaran berjalan dalam mode simulasi.'],
+    ['Komisi mitra', 'BERESIN memotong komisi dari nilai jasa sesuai pengaturan yang berlaku. Material dan biaya perjalanan tidak dikenai komisi. Mitra wajib menjaga deposit minimum.'],
+    ['Pembatalan', 'Pembatalan mengikuti kebijakan pembatalan yang tampil di halaman layanan. Biaya pembatalan dapat berlaku bila mitra sudah berangkat atau tiba.'],
+    ['Garansi & keluhan', 'Masa garansi berbeda per layanan dan tercantum di halaman layanan. Keluhan dan klaim garansi diajukan lewat pesanan terkait dan ditinjau tim dukungan.'],
+    ['Perilaku', 'Dilarang menyalahgunakan chat, membagikan data pihak lain tanpa izin, atau bertransaksi di luar aplikasi untuk menghindari komisi. Akun yang melanggar dapat dibatasi.']
+  ]]
+};
+VIEWS.legal = p => {
+  const doc = LEGAL[p.x] || LEGAL.privasi;
+  return `<div class="stack">${pagehead(doc[0])}
+    ${isTester() ? note('warn', 'alert', 'Draf awal untuk uji coba. Tinjau bersama penasihat hukum sebelum aplikasi dibuka untuk umum.') : ''}
+    <div class="card stack">${doc[1].map(([h, t]) => `<div class="stack-sm"><h4>${esc(h)}</h4><p class="small muted">${esc(t)}</p></div>`).join('')}</div>
+    <p class="xs muted" style="text-align:center">Berlaku untuk BERESIN versi ${APP_VERSION}</p></div>`;
+};
 /* =========================================================
    BERESIN — konsol Operasional: admin, dukungan, supervisor, keuangan
    ========================================================= */
@@ -3581,6 +3731,7 @@ VIEWS.a_audit = () => {
    BERESIN — mulai
    ========================================================= */
 loadUI();
+loadPrefs();
 if (location.hash === '#mitra') { S.role = 'worker'; S.splash.role = 'worker'; }
 if (/^#admin\b/.test(location.hash)) S.role = 'ops';
 detectGeo().then(() => scheduleRender());

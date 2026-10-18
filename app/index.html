@@ -76,7 +76,7 @@
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: .9375rem; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
 h1, h2, h3, h4 { margin: 0; line-height: 1.25; text-wrap: balance; letter-spacing: -0.015em; }
 h1 { font-size: 1.6rem; font-weight: 800; }
@@ -446,6 +446,19 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .greet h2 { font-size: 1.15rem; }
 .greet p { font-size: .84rem; color: var(--muted); }
 .foot { text-align: center; font-size: .72rem; color: var(--faint); padding-top: 10px; }
+
+/* Pengaturan */
+html[data-text="besar"] { font-size: 112.5%; }
+html[data-text="sangat"] { font-size: 125%; }
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; scroll-behavior: auto !important; }
+.setsec { font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 8px 4px -6px; }
+.setrow { display: grid; gap: 12px; padding: 14px; border-bottom: 1px solid var(--line); }
+.setrow .lbl { display: flex; align-items: center; gap: 12px; }
+.seg.full { overflow: visible; }
+.seg.full button { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; white-space: normal; text-align: center; line-height: 1.2; }
+.li .val { color: var(--muted); font-size: .84rem; font-weight: 600; flex: none; }
+.li.danger .strong { color: var(--danger-text); }
+.btn-danger svg { flex: none; }
 </style>
 
 <style>body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
