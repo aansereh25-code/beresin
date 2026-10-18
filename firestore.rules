@@ -1,0 +1,38 @@
+rules_version = '2';
+// Aturan keamanan Firestore BERESIN.
+// GANTI daftar email di fungsi isAdmin() dengan email Google pemilik/admin (sama dengan owners di app/config.js).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.email in ['GANTI-EMAIL-PEMILIK@gmail.com']; }
+    function unchanged(f) { return request.resource.data.get(f, null) == resource.data.get(f, null); }
+
+    // Konfigurasi platform: hanya admin yang mengubah
+    match /config/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+
+    // Data privat per pengguna (dokumen verifikasi): pemiliknya + admin
+    match /data/users/{uid}/{rest=**} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Profil: siapa pun yang masuk boleh membaca; hanya pemilik profil yang mengubah,
+    // dan mitra tidak boleh mengubah status verifikasi/sertifikasinya sendiri.
+    match /profiles/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && (request.resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid
+                      && unchanged('verif') && unchanged('certs') && unchanged('role') && unchanged('staffRole') && unchanged('ownerUid'));
+      allow delete: if isAdmin();
+    }
+
+    // Buku besar & log audit: hanya boleh ditambah, tidak diubah/dihapus
+    match /ledger/{id} { allow read: if signedIn(); allow create: if signedIn(); allow update, delete: if false; }
+    match /audit/{id} { allow read: if isAdmin(); allow create: if signedIn(); allow update, delete: if false; }
+
+    // Koleksi operasional lain
+    match /{col}/{id} {
+      allow read, write: if signedIn() && col in ['bookings', 'reports', 'invoices', 'notifications', 'feedback', 'tickets', 'chats', 'tracks', 'locks'];
+    }
+  }
+}

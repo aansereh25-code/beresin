@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://aansereh25-code.github.io/beresin/sitemap.xml
