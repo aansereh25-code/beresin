@@ -742,6 +742,7 @@ const Store = {
 
 async function initStore() {
   if (window.BERESIN_CONFIG && window.BERESIN_CONFIG.firebase && window.firebase) return initFirebase();
+  if (window.BERESIN_CONFIG && window.BERESIN_CONFIG.firebase) R.connFail = true; // konfigurasi ada, tetapi SDK Firebase gagal dimuat
   const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
   const [db, user, assets, downloads] = await Promise.all([use('db'), use('user'), use('assets'), use('downloads')]);
   R.user = user; R.assets = assets; R.downloads = downloads;
@@ -769,7 +770,7 @@ async function initStore() {
     if (!ME.canWrite) R.readonly = true;
   } else {
     R.mode = 'local';
-    ME.uid = 'lokal-' + devId; ME.isOwner = demoAdminWanted(); ME.canWrite = true;
+    ME.uid = 'lokal-' + devId; ME.isOwner = R.connFail ? false : demoAdminWanted(); ME.canWrite = true;
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
       if (raw) { const o = JSON.parse(raw); COLS.forEach(c => { D[c] = o[c] || {}; }); }
@@ -1903,7 +1904,9 @@ function doRender(force) {
 }
 function banner() {
   const parts = [];
-  if (R.mode === 'local') parts.push(`<div class="modechip">${icon('info', 15)}<span><b>Mode demo</b> · data tersimpan di perangkat ini saja</span></div>`);
+  if (R.connFail) parts.push(note('danger', 'alert', '<b>Tidak bisa terhubung ke server BERESIN.</b> Periksa koneksi internet, lalu muat ulang halaman. Sementara ini data hanya tersimpan di perangkat ini.'));
+  else if (R.mode === 'local') parts.push(`<div class="modechip">${icon('info', 15)}<span><b>Mode demo</b> · data tersimpan di perangkat ini saja</span></div>`);
+  if (R.mode === 'firebase' && R.error && typeof FB_ERR !== 'undefined') parts.push(note('danger', 'alert', esc(FB_ERR[String(R.error).replace(/^(auth|firestore)\//, '')] || ('Gangguan database: ' + R.error))));
   if (R.mode === 'remote' && R.readonly) parts.push(note('warn', 'lock', '<b>Mode baca saja.</b> Akun Anda baru bisa melihat. Minta pemilik aplikasi memberi Anda akses yang bisa berinteraksi (Contributor) lewat menu Bagikan.'));
   if (R.error === 'revoked') parts.push(note('danger', 'alert', 'Akses ke data telah berubah. Muat ulang halaman.'));
   return parts.length ? `<div class="stack-sm" style="margin-bottom:12px">${parts.join('')}</div>` : '';
@@ -2099,7 +2102,22 @@ function googleG() { return '<svg width="18" height="18" viewBox="0 0 48 48" ari
 A.fbLogin = async () => {
   const p = new firebase.auth.GoogleAuthProvider();
   try { await R.fb.auth.signInWithPopup(p); location.reload(); }
-  catch (e) { if (e && /popup/.test(e.code || '')) { await R.fb.auth.signInWithRedirect(p); } else toast('Gagal masuk: ' + ((e && e.message) || 'coba lagi'), true); }
+  catch (e) {
+    const code = (e && e.code) || '';
+    if (/popup-blocked|operation-not-supported/.test(code)) { await R.fb.auth.signInWithRedirect(p); return; }
+    if (/popup-closed|cancelled-popup/.test(code)) return;
+    toast(FB_ERR[code.replace('auth/', '')] || ('Gagal masuk: ' + ((e && e.message) || 'coba lagi')), true);
+  }
+};
+const FB_ERR = {
+  'unauthorized-domain': 'Alamat situs ini belum diizinkan. Di Firebase: Authentication → Settings → Authorized domains → tambahkan domain situs.',
+  'operation-not-allowed': 'Login Google belum diaktifkan. Di Firebase: Authentication → Sign-in method → Google → Enable.',
+  'configuration-not-found': 'Login belum disiapkan. Di Firebase: buka Authentication → Get started, lalu aktifkan Google.',
+  'network-request-failed': 'Tidak ada koneksi internet. Coba lagi.',
+  'permission-denied': 'Akses database ditolak. Pastikan aturan (Rules) Firestore sudah ditempel dan dipublikasikan.',
+  'failed-precondition': 'Database belum dibuat. Di Firebase: Firestore Database → Create database.',
+  'not-found': 'Database belum dibuat. Di Firebase: Firestore Database → Create database.',
+  'unavailable': 'Server sedang tidak terjangkau. Periksa koneksi internet.'
 };
 A.fbLogout = async () => { await R.fb.auth.signOut(); location.reload(); };
 /* =========================================================
