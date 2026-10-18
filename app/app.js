@@ -2094,7 +2094,7 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 function loginScreen() {
-  return `<div class="splash" style="position:fixed"><div class="mid" style="gap:10px">${logo(104)}<div class="word">Beresin</div><p class="tag">Urusan beres, hidup lebih mudah.</p>
+  return `<div class="splash login" style="position:fixed"><div class="mid" style="gap:10px">${logo(104)}<div class="word">Beresin</div><p class="tag">Urusan beres, hidup lebih mudah.</p>
     <button class="btn btn-primary btn-lg" style="margin-top:18px;min-width:260px" data-act="fbLogin">${googleG()} Masuk dengan Google</button>
     <p class="xs" style="color:#64748B;max-width:300px;margin-top:6px">Dengan masuk, Anda menyetujui ketentuan layanan dan kebijakan privasi BERESIN.</p></div></div>`;
 }
