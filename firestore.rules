@@ -20,7 +20,11 @@ service cloud.firestore {
     // dan mitra tidak boleh mengubah status verifikasi/sertifikasinya sendiri.
     match /profiles/{id} {
       allow read: if signedIn();
-      allow create: if signedIn() && (request.resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if isAdmin() || (signedIn() && request.resource.data.ownerUid == request.auth.uid
+                      && request.resource.data.role in ['customer', 'worker']
+                      && request.resource.data.get('verif', 'menunggu') == 'menunggu'
+                      && request.resource.data.get('certs', {}).size() == 0
+                      && request.resource.data.get('staffRole', null) == null);
       allow update: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid
                       && unchanged('verif') && unchanged('certs') && unchanged('role') && unchanged('staffRole') && unchanged('ownerUid'));
       allow delete: if isAdmin();
